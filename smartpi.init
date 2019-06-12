@@ -1,0 +1,56 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          SmartPi
+# Required-Start:
+# Required-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Kurze Beschreibung
+# Description:       Längere Beschreibung
+### END INIT INFO
+
+export NODE_PATH=/usr/local/lib/node_modules:$NODE_PATH
+#echo ds1307 0x68 > /sys/class/i2c-adapter/i2c-1/new_device
+
+# Actions
+case "$1" in
+    start)
+#               /sbin/ifconfig eth0:1 169.254.3.10 netmask 255.255.0.0 up
+        # START
+        /sbin/hwclock --hctosys
+touch /var/run/smartpi_values
+touch /var/tmp/smartpi/values
+chown pi:users /var/run/smartpi_values
+chown pi:users /var/tmp/smartpi/values
+
+#        /usr/local/bin/smartpireadout &
+#        /usr/local/bin/smartpiserver &
+        su pi -c /usr/local/bin/smartpireadout &
+        su pi -c /usr/local/bin/smartpiserver &
+        /usr/local/bin/smartpi_check_umts.sh &
+        su pi -c /usr/bin/node-red &
+        ;;
+    stop)
+        /sbin/hwclock --systohc
+        killall smartpiserver &
+        killall smartpireadout &
+        killall smartpi_check_umts.sh &
+        killall -9 node-red &
+        ;;
+    restart)
+        # RESTART
+        killall smartpiserver &
+        killall smartpireadout &
+        killall smartpi_check_umts.sh &
+        killall -9 node-red &
+        sleep 1
+        /usr/local/bin/smartpi_check_umts.sh &
+        su pi -c /usr/local/bin/smartpireadout &
+        su pi -c /usr/local/bin/smartpiserver &
+#        /usr/local/bin/smartpireadout &
+#        /usr/local/bin/smartpiserver &
+        su pi -c /usr/bin/node-red &
+        ;;
+esac
+
+exit 0
